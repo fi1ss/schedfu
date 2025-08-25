@@ -23,8 +23,8 @@ logging.basicConfig(
 )
 
 # ========== КОНСТАНТЫ ==========
-# TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w"
-TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
+TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w"
+# TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
 WAITING_FOR_GROUP = 1  # Состояние ожидания ввода группы
 WAITING_FOR_BROADCAST = 2  # Состояние ожидания ввода сообщения для рассылки
 WAITING_FOR_TICKET = 3
