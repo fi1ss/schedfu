@@ -24,8 +24,8 @@ logging.basicConfig(
 
 # ========== КОНСТАНТЫ ==========
 # верхняя - основная, нижний токен - тестовый
-TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w" 
-# TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
+# TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w" 
+TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
 WAITING_FOR_GROUP = 1  # Состояние ожидания ввода группы
 WAITING_FOR_BROADCAST = 2  # Состояние ожидания ввода сообщения для рассылки
 WAITING_FOR_TICKET = 3
@@ -66,7 +66,13 @@ CLASS_COLORS = {
     'difzachet': "#E0573FFF",
     'consultation': "#F77963FF",
     'ekzamen': "#E0573FFF",
+    't_urok_drob': "drob"
 
+}
+
+CLASS_COLORS_CONS = {
+    'nechet': "#D5932F",
+    'chet': "#3F8D2A"
 }
 
 CLASS_DESCRIPTIONS = {
@@ -77,6 +83,11 @@ CLASS_DESCRIPTIONS = {
     'gia': 'ГИА',
     'kanik': 'каникулы',
     'head_urok_block': 'неактивный период'
+}
+
+CLASS_DESCRIPTIONS_CONS = {
+    'nechet': 'Нечётная неделя',
+    'chet': 'Чётная неделя'
 }
 
 # Настройки для вложенных таблиц
@@ -549,7 +560,7 @@ async def find_prep_and_show_schedule(update: Update, context: ContextTypes.DEFA
     
     return ConversationHandler.END
 
-async def get_schedule_image(chat_id, action='group', const=False):
+async def get_schedule_image(chat_id, action='group', cons_sched=False):
     """Получает изображение расписания для указанного чата"""
     if action and action.isdigit():
             def get_schedule_json(teacher_id: int, date: datetime.date, week_type: int = 1):
@@ -633,7 +644,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
             'sid': group_data['sid'],
             'gr': group_data['id'],
             'year': 2025,
-            'vr': 0 if const else 1
+            'vr': 0 if cons_sched else 1
         }
         response = requests.get(
             "https://coworking.tyuiu.ru/shs/all_t/sh.php",
@@ -641,7 +652,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
             headers=HEADERS
         )
         
-        if const:
+        if cons_sched:
             pattern = r'(</table>)(?!\s*</td>)'
             replacement = r'\1</td>'
             fixed_html = re.sub(pattern, replacement, response.text, flags=re.IGNORECASE)
@@ -678,6 +689,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
             font_bold = ImageFont.truetype("arialbd.ttf", 14)
             font_regular = ImageFont.truetype("arial.ttf", 12)
             font_header = ImageFont.truetype("arialbd.ttf", 16)
+            font_first_line = ImageFont.truetype("arialbd.ttf", 18)
             font_small = ImageFont.truetype("arial.ttf", NESTED_TABLE_SETTINGS['font_size'])
         except:
             font_bold = font_regular = font_header = font_small = ImageFont.load_default()
@@ -714,7 +726,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
                 available_width = parent_width - 2 * padding if parent_width else 100
                 col_width = max(NESTED_TABLE_SETTINGS['min_col_width'], available_width // num_cols)
                 col_widths = [col_width] * num_cols
-                row_heights = [40] * len(rows)
+                row_heights = [20] * (len(rows)+1)
 
             for i, row in enumerate(rows):
                 cells = row.find_all(['th', 'td'], recursive=False)
@@ -735,10 +747,10 @@ async def get_schedule_image(chat_id, action='group', const=False):
                         row_heights[i] = max(row_heights[i], nested_height)
                     else:
                         lines = textwrap.wrap(text, width=40 if level > 0 else 20)
-                        line_height = NESTED_TABLE_SETTINGS['line_spacing'] + 30 if level > 0 else 20
+                        line_height = 30 if level > 0 else 20
                         row_heights[i] = max(
                             row_heights[i], 
-                            len(lines) * line_height + 10 + NESTED_TABLE_SETTINGS['border_offset']
+                            len(lines) * line_height + 15 + NESTED_TABLE_SETTINGS['border_offset']
                         )
             
             return (sum(col_widths), sum(row_heights), col_widths, row_heights)
@@ -755,6 +767,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
             nested_tables = cell.find_all('table', recursive=False)
             for table in nested_tables:
                 table_classes = table.get('class', [])
+                    
                 for class_name, color in CLASS_COLORS.items():
                     if class_name in table_classes:
                         return color
@@ -775,14 +788,14 @@ async def get_schedule_image(chat_id, action='group', const=False):
                     return COLORS['first_col_bg']
             return COLORS['white']
 
-        def draw_table(draw, x, y, table, col_widths, row_heights, level=0, parent_width=None):
+        def draw_table(draw, x, y, table, col_widths, row_heights, level=0, parent_width=None, cons_sch=False):
             """Рисует таблицу на изображении с разными шрифтами для разных элементов"""
             # Добавляем шрифт для дисциплин (крупнее обычного)
-            font_disc = ImageFont.truetype("arial.ttf", size=font_regular.size + 2)
+            font_disc = ImageFont.truetype("arial.ttf", size=font_bold.size)
             
             # Константы для отступов и межстрочного интервала
             PADDING = 4
-            LINE_SPACING = 4
+            LINE_SPACING = 2
 
             rows = table.find_all('tr', recursive=False)
             current_y = y
@@ -799,7 +812,8 @@ async def get_schedule_image(chat_id, action='group', const=False):
                     # ОСОБАЯ ОБРАБОТКА ДЛЯ ПЕРВОЙ СТРОКИ ОСНОВНОЙ ТАБЛИЦЫ
                     if level == 0 and i == 0:
                         text = format_header(text)
-                        font = font_bold
+                        font = font_first_line
+                        
                         text_color = COLORS['white']
                         bg_color = COLORS['header_bg']
                         
@@ -829,7 +843,8 @@ async def get_schedule_image(chat_id, action='group', const=False):
                     
                     # ОБЫЧНЫЕ ЯЧЕЙКИ
                     bg_color = get_cell_color(cell, level, j)
-                    
+                    if bg_color == 'drob':
+                        bg_color = "#D5932F"
                     # Рисуем фон для ячеек основного уровня
                     if level == 0:
                         draw.rectangle(
@@ -837,19 +852,77 @@ async def get_schedule_image(chat_id, action='group', const=False):
                             fill=bg_color,
                             outline=COLORS['border']
                         )
-                    
+                        if bg_color == "#D5932F":
+                            draw.rectangle(
+                            [current_x, current_y + cell_height / 2, current_x + cell_width, current_y + cell_height],
+                            fill="#3F8D2A",
+                            outline=COLORS['border']
+                            )
+                            
+                            # text_width = font.getlength('Нечётная неделя')
+                            # text_x = current_x + (cell_width - text_width) // 2
+                            # draw.text((text_x, current_y + cell_height / 2 - 15), 'Нечётная неделя', fill=text_color, font=font)
+                            # text_width = font.getlength('Чётная неделя')
+                            # text_x = current_x + (cell_width - text_width) // 2
+                            # draw.text((text_x, current_y + cell_height / 2 + 2), 'Чётная неделя', fill=text_color, font=font)
+
                     # Обработка вложенных таблиц
                     nested_tables = cell.find_all('table', recursive=False)
                     if nested_tables:
                         formatted_lines = []
                         line_types = []
                         line_fonts = []
-                        
+        
                         for nested_table in nested_tables:
                             rows = nested_table.find_all('tr', recursive=False)
                             row_data = [None] * 4
                             
-                            if len(rows) == 1:
+                            if cons_sch and len(rows)==2:
+                                row_data = [None] * 6
+                                disc = rows[0].find('div', class_='disc')
+                                prep = rows[0].find('div', class_='prep')
+                                cab = rows[0].find('div', class_='cab')
+                                
+                                disc2 = rows[1].find('div', class_='disc')
+                                prep2 = rows[1].find('div', class_='prep')
+                                cab2 = rows[1].find('div', class_='cab')
+
+                                row_data[0] = disc.get_text(strip=True) if disc else None
+                                row_data[1] = prep.get_text(strip=True) if prep else None
+                                row_data[2] = cab.get_text(strip=True) if cab else None
+
+                                row_data[3] = disc2.get_text(strip=True) if disc2 else None
+                                row_data[4] = prep2.get_text(strip=True) if prep2 else None
+                                row_data[5] = cab2.get_text(strip=True) if cab2 else None
+
+                                if row_data[0]: 
+                                    formatted_lines.append(row_data[0])
+                                    line_types.append('top')
+                                    line_fonts.append(font_disc)
+                                if row_data[1]: 
+                                    formatted_lines.append(row_data[1])
+                                    line_types.append('top')
+                                    line_fonts.append(font_regular)
+                                if row_data[2]: 
+                                    formatted_lines.append(row_data[2])
+                                    line_types.append('top')
+                                    line_fonts.append(font_regular)
+
+                                if row_data[3]: 
+                                    
+                                    formatted_lines.append(row_data[3])
+                                    line_types.append('bottom')
+                                    line_fonts.append(font_disc)
+                                if row_data[4]: 
+                                    formatted_lines.append(row_data[4])
+                                    line_types.append('bottom')
+                                    line_fonts.append(font_regular)
+                                if row_data[5]: 
+                                    formatted_lines.append(row_data[5])
+                                    line_types.append('bottom')
+                                    line_fonts.append(font_regular)
+
+                            elif len(rows) == 1:
                                 disc = rows[0].find('div', class_='disc')
                                 prep = rows[0].find('div', class_='prep')
                                 if prep == None:
@@ -910,7 +983,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
                         max_line_width = cell_width - 2 * PADDING
                         
                         for line, line_type, line_font in zip(formatted_lines, line_types, line_fonts):
-                            words = line.split()
+                            words = re.split(r'[\s-]+', line)
                             current_line = ""
                             
                             for word in words:
@@ -1038,18 +1111,27 @@ async def get_schedule_image(chat_id, action='group', const=False):
                 draw.text(((img_width - text_width) / 2, 10 + k * 20), line, fill=COLORS['text'], font=font_header)
         
         # Основная таблица
-        draw_table(draw, 0, 50, main_table, col_widths, row_heights)
+        draw_table(draw, 0, 50, main_table, col_widths, row_heights, cons_sch=cons_sched)
         
         # Легенда (пояснения цветов)
         legend_y = 50 + table_height + 10
         legend_x = 10
-        for i, (cls, desc) in enumerate(zip(CLASS_COLORS.keys(), CLASS_DESCRIPTIONS.values())):
-            draw.rectangle([legend_x, legend_y, legend_x+15, legend_y+15], fill=CLASS_COLORS[cls], outline=COLORS['border'])
-            draw.text((legend_x+20, legend_y), desc, fill=COLORS['text'], font=font_regular)
-            legend_x += font_regular.getlength(desc) + 40
-            if legend_x > img_width - 100 and i < len(CLASS_COLORS)-1:
-                legend_x = 10
-                legend_y += 20
+        if cons_sched:
+            for i, (cls, desc) in enumerate(zip(CLASS_COLORS_CONS.keys(), CLASS_DESCRIPTIONS_CONS.values())):
+                draw.rectangle([legend_x, legend_y, legend_x+15, legend_y+15], fill=CLASS_COLORS_CONS[cls], outline=COLORS['border'])
+                draw.text((legend_x+20, legend_y), desc, fill=COLORS['text'], font=font_regular)
+                legend_x += font_regular.getlength(desc) + 40
+                if legend_x > img_width - 100 and i < len(CLASS_COLORS_CONS)-1:
+                    legend_x = 10
+                    legend_y += 20
+        else:
+            for i, (cls, desc) in enumerate(zip(CLASS_COLORS.keys(), CLASS_DESCRIPTIONS.values())):
+                draw.rectangle([legend_x, legend_y, legend_x+15, legend_y+15], fill=CLASS_COLORS[cls], outline=COLORS['border'])
+                draw.text((legend_x+20, legend_y), desc, fill=COLORS['text'], font=font_regular)
+                legend_x += font_regular.getlength(desc) + 40
+                if legend_x > img_width - 100 and i < len(CLASS_COLORS)-1:
+                    legend_x = 10
+                    legend_y += 20
         
         # Сохранение изображения в буфер
         img_byte_arr = BytesIO()
@@ -1098,7 +1180,7 @@ async def send_schedule_const(update: Update, context: ContextTypes.DEFAULT_TYPE
     sent_message = await update.message.reply_text("Получаю расписание...")
     
     # Получаем расписание
-    img = await get_schedule_image(update.effective_chat.id, const=True)
+    img = await get_schedule_image(update.effective_chat.id, cons_sched=True)
     
     # Удаляем сообщение "Получаю расписание..."
     try:
