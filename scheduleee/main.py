@@ -23,8 +23,9 @@ logging.basicConfig(
 )
 
 # ========== КОНСТАНТЫ ==========
-# TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w"
-TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
+# верхняя - основная, нижний токен - тестовый
+TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w" 
+# TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
 WAITING_FOR_GROUP = 1  # Состояние ожидания ввода группы
 WAITING_FOR_BROADCAST = 2  # Состояние ожидания ввода сообщения для рассылки
 WAITING_FOR_TICKET = 3
@@ -668,7 +669,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
             if header_div.find('b'):
                 header_text += f" {header_div.find('b').get_text(strip=True)}"
         main_table = soup.find('table')
-        print (main_table)
+        
         if not main_table:
             return None
 
