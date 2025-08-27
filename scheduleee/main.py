@@ -23,8 +23,8 @@ logging.basicConfig(
 )
 
 # ========== КОНСТАНТЫ ==========
-TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w"
-# TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
+# TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w"
+TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
 WAITING_FOR_GROUP = 1  # Состояние ожидания ввода группы
 WAITING_FOR_BROADCAST = 2  # Состояние ожидания ввода сообщения для рассылки
 WAITING_FOR_TICKET = 3
@@ -614,7 +614,7 @@ async def get_schedule_image(chat_id, action='group', const=False):
                         continue
                     
                     if urok_data[0] == 'urok':
-                        table_html = f"<table class='comm3 {urok_data[4]}'><tr><td><div class='disc'>{urok_data[1]}<br>{urok_data[2]}</div></td><td class='cabs'><div class='cab'>{urok_data[3]}</          div></td></tr></table>"
+                        table_html = f"<table class='comm3 {urok_data[4]}'><tr><td><div class='disc'>{urok_data[1]}</div><div class='grupp'>{urok_data[2]}</div></td><td class='cabs'><div class='cab'>{urok_data[3]}</          div></td></tr></table>"
                     elif urok_data[0] == 'ekz':
                         table_html = f"<table class='comm3 {urok_data[4]}'><tr><td class='head_ekz'>{urok_data[1]}</td><td rowspan=2 class='cabs'><div class='cab'>{urok_data[3]}</div></td></          tr><tr><td><div class='disc'>{urok_data[2]}</div></td></tr></table>"
                     else:
@@ -851,6 +851,8 @@ async def get_schedule_image(chat_id, action='group', const=False):
                             if len(rows) == 1:
                                 disc = rows[0].find('div', class_='disc')
                                 prep = rows[0].find('div', class_='prep')
+                                if prep == None:
+                                    prep = rows[0].find('div', class_='grupp')
                                 cab = rows[0].find('div', class_='cab')
                                 
                                 row_data[0] = disc.get_text(strip=True) if disc else None
