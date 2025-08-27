@@ -573,12 +573,12 @@ async def get_schedule_image(chat_id, action='group', const=False):
 
             # 📥 Получаем исходный HTML
             url = f'https://coworking.tyuiu.ru/shs/all_t/sh.php?action=prep&prep={action}&vr=1&count=6' \
-                  '&shed[0]=28705&union[0]=0&year[0]=2025' \
-                  '&shed[1]=28704&union[1]=0&year[1]=2025' \
-                  '&shed[2]=28703&union[2]=0&year[2]=2025' \
-                  '&shed[3]=28702&union[3]=0&year[3]=2025' \
-                  '&shed[4]=28701&union[4]=0&year[4]=2025' \
-                  '&shed[5]=9289&union[5]=0&year[5]=2025'
+                  '&shed[0]=28708&union[0]=0&year[0]=2025' \
+                  '&shed[1]=28710&union[1]=0&year[1]=2025' \
+                  '&shed[2]=28711&union[2]=0&year[2]=2025' \
+                  '&shed[3]=28714&union[3]=0&year[3]=2025' \
+                  '&shed[4]=28713&union[4]=0&year[4]=2025' \
+                  '&shed[5]=28709&union[5]=0&year[5]=2025'
 
             req = urllib.request.Request(
                 url,
