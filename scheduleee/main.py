@@ -24,8 +24,8 @@ logging.basicConfig(
 
 # ========== КОНСТАНТЫ ==========
 # верхняя - основная, нижний токен - тестовый
-TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w" 
-# TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
+# TOKEN = "7962333071:AAF0wlrEKS9MVbgym_Ws9erYUzucgjVG52w" 
+TOKEN = "8039378791:AAE8p6naztH88Me9VsvX-5YlWCUQGUyP-8I"
 WAITING_FOR_GROUP = 1  # Состояние ожидания ввода группы
 WAITING_FOR_BROADCAST = 2  # Состояние ожидания ввода сообщения для рассылки
 WAITING_FOR_TICKET = 3
@@ -608,11 +608,16 @@ async def get_schedule_image(chat_id, action='group', cons_sched=False):
             # 🧠 Дата начала недели (например, Понедельник)
             start_date = datetime.date.today()
             teacher_id = action
-            week_type = 0
+            week_type = 1
+            week_type = get_week_type(start_date)
 
             for day_offset in range(8):  # 6 дней в неделе
                 date = start_date + datetime.timedelta(days=day_offset)
                 if date.weekday() == 6:
+                    if week_type == 1:
+                        week_type = 0
+                    else:
+                        week_type = 1
                     continue
                 data = get_schedule_json(teacher_id, date, week_type)
 
@@ -1143,6 +1148,15 @@ async def get_schedule_image(chat_id, action='group', cons_sched=False):
         logging.error(f"Ошибка: {str(e)}", exc_info=True)
         return None
 
+
+def get_week_type(date):
+    september_date = datetime.date(date.year, 9, 1)
+    days_passed = (date - september_date).days
+    weeks_passed = days_passed // 7 
+    if weeks_passed % 2 == 1:
+        return 0
+    else:
+        return 1
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start"""
